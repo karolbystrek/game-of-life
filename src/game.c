@@ -106,7 +106,8 @@ Game *load_game_from_file(const char *filename) {
   //reset file to the beginning
   rewind(f);
 
-  Game *game = init_game(max_width, height);
+  //allocate with 1 cell padding on each side
+  Game *game = init_game(max_width + 2, height + 2);
   if (!game) {
     fclose(f);
     return NULL;
@@ -121,9 +122,9 @@ Game *load_game_from_file(const char *filename) {
     } else {
       if (x < max_width && y < height) {
         if (ch == '#') {
-          game->grid[y][x] = true;
+          game->grid[y + 1][x + 1] = true;
         } else {
-          game->grid[y][x] = false;
+          game->grid[y + 1][x + 1] = false;
         }
       }
       x++;
@@ -141,14 +142,8 @@ static int count_neighbors(Game *game, int x, int y) {
       if (j == 0 && i == 0) {
         continue;
       }
-
-      int nx = x + j;
-      int ny = y + i;
-
-      if (nx >= 0 && nx < game->width && ny >= 0 && ny < game->height) {
-        if (game->grid[ny][nx]) {
-          count++;
-        }
+      if (game->grid[y + i][x + j]) {
+        count++;
       }
     }
   }
@@ -162,8 +157,8 @@ static void swap_grids(Game *game) {
 }
 
 void step_game(Game *game) {
-  for (int h = 0; h < game->height; h++) {
-    for (int w = 0; w < game->width; w++) {
+  for (int h = 1; h < game->height - 1; h++) {
+    for (int w = 1; w < game->width - 1; w++) {
       int neighbors = count_neighbors(game, w, h);
       bool alive = game->grid[h][w];
 

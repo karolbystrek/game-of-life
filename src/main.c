@@ -17,17 +17,20 @@ void setup_ncurses() {
 void draw_game(Game *game, int generation) {
     clear();
     
-    for (int y = 0; y < game->height; y++) {
-        for (int x = 0; x < game->width; x++) {
+    for (int y = 1; y < game->height - 1; y++) {
+        for (int x = 1; x < game->width - 1; x++) {
+            int screen_y = y - 1;
+            int screen_x = x - 1;
+
             if (game->grid[y][x]) {
-                mvaddch(y, x, 'O');
+                mvaddch(screen_y, screen_x, 'O');
             } else {
-                mvaddch(y, x, '.');
+                mvaddch(screen_y, screen_x, '.');
             }
         }
     }
 
-    int footer_y = game->height + 1;
+    int footer_y = (game->height - 2) + 1; 
     mvprintw(footer_y, 0, "Epoch: %d | Controls: [Space] Step, [Q] Quit", generation);
 
     refresh();
