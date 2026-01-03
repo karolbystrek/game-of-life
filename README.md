@@ -1,4 +1,4 @@
-# Conway's Game of Life (C + ncurses)
+# Conway's Game of Life
 
 This project implements Conway's Game of Life using the C programming language and the `ncurses` library for the Text User Interface (TUI).
 
