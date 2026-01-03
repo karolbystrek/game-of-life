@@ -17,10 +17,10 @@ void setup_ncurses() {
 void draw_game(Game *game, int generation, bool is_paused) {
     clear();
     
-    for (int y = 1; y < game->height - 1; y++) {
-        for (int x = 1; x < game->width - 1; x++) {
-            int screen_y = y - 1;
-            int screen_x = x - 1;
+    for (int y = 0; y < game->height; y++) {
+        for (int x = 0; x < game->width; x++) {
+            int screen_y = y;
+            int screen_x = x;
 
             if (game->grid[y][x]) {
                 mvaddch(screen_y, screen_x, 'O');
@@ -30,7 +30,7 @@ void draw_game(Game *game, int generation, bool is_paused) {
         }
     }
 
-    int footer_y = (game->height - 2) + 1;
+    int footer_y = game->height + 1;
     if (is_paused) {
         mvprintw(footer_y, 0, "Epoch: %d | Controls: [P] Play, [Q] Quit, [Space] Step", generation);
     } else {
