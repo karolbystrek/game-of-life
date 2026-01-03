@@ -14,7 +14,7 @@ void setup_ncurses() {
     keypad(stdscr, TRUE);
 }
 
-void draw_game(Game *game, int generation) {
+void draw_game(Game *game, int generation, bool is_paused) {
     clear();
     
     for (int y = 1; y < game->height - 1; y++) {
@@ -30,8 +30,12 @@ void draw_game(Game *game, int generation) {
         }
     }
 
-    int footer_y = (game->height - 2) + 1; 
-    mvprintw(footer_y, 0, "Epoch: %d | Controls: [Space] Step, [Q] Quit", generation);
+    int footer_y = (game->height - 2) + 1;
+    if (is_paused) {
+        mvprintw(footer_y, 0, "Epoch: %d | Controls: [P] Play, [Q] Quit, [Space] Step", generation);
+    } else {
+        mvprintw(footer_y, 0, "Epoch: %d | Controls: [P] Pause, [Q] Quit", generation);
+    }
 
     refresh();
 }
@@ -51,6 +55,7 @@ int main(int argc, char *argv[]) {
     setup_ncurses();
 
     bool is_running = true;
+    bool is_paused = true;
     int epoch = 0;
 
     while (is_running) {
@@ -60,12 +65,21 @@ int main(int argc, char *argv[]) {
             if (ch == 'q' || ch == 'Q') {
                 is_running = false;
             } else if (ch == ' ') {
-                step_game(game);
-                epoch++;
+                if (is_paused) {
+                    step_game(game);
+                    epoch++;
+                }
+            } else if (ch == 'p' || ch == 'P') {
+                is_paused = !is_paused;
             }
         }
 
-        draw_game(game, epoch);
+        if (!is_paused) {
+            step_game(game);
+            epoch++;
+        }
+
+        draw_game(game, epoch, is_paused);
         
         struct timespec ts = {0, 100000000L};
         nanosleep(&ts, NULL);
