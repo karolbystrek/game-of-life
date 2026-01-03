@@ -207,3 +207,10 @@ void toggle_cell(Game *game, int x, int y) {
   }
   game->grid[y * game->width + x] = !game->grid[y * game->width + x];
 }
+
+void randomize_game(Game *game) {
+  srand(time(NULL));
+  for (int i = 0; i < game->width * game->height; i++) {
+    game->grid[i] = (rand() % 5 == 0); 
+  }
+}

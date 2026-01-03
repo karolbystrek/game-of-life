@@ -1,6 +1,7 @@
 #include "game.h"
 #include <ncurses.h>
 #include <stdio.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -88,16 +89,65 @@ void draw_game(Game *game, int epoch, bool is_paused, long simulation_speed_ns,
   refresh();
 }
 
-int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    printf("Usage: %s <input_file>\n", argv[0]);
-    return 1;
-  }
+void print_usage(const char *prog_name) {
+  printf("Usage: %s [-f <file>] [-r] [-w <width>] [-h <height>]\n", prog_name);
+  printf("Options:\n");
+  printf("  -f <file>    Load game from a file\n");
+  printf("  -r           Initialize with a random pattern\n");
+  printf("  -w <width>   Set board width (default: 40)\n");
+  printf("  -h <height>  Set board height (default: 20)\n");
+}
 
-  Game *game = load_game_from_file(argv[1]);
-  if (!game) {
-    printf("Error: Could not load game from file '%s'\n", argv[1]);
-    return 1;
+int main(int argc, char *argv[]) {
+  char *filename = NULL;
+  bool random_mode = false;
+  int width = 60;
+  int height = 20;
+  int opt;
+
+  while ((opt = getopt(argc, argv, "f:rw:h:")) != -1) {
+    switch (opt) {
+    case 'f':
+      filename = optarg;
+      break;
+    case 'r':
+      random_mode = true;
+      break;
+    case 'w':
+      width = atoi(optarg);
+      break;
+    case 'h':
+      height = atoi(optarg);
+      break;
+    default:
+      print_usage(argv[0]);
+      return 1;
+    }
+  }
+  Game *game = NULL;
+
+  if (filename) {
+    game = load_game_from_file(filename);
+    if (!game) {
+      printf("Error: Could not load game from file '%s'\n", filename);
+      return 1;
+    }
+  } else {
+    // If no file specified, init an empty or random board with given dimensions
+    if (width <= 0 || height <= 0) {
+        printf("Error: Invalid dimensions %dx%d\n", width, height);
+        return 1;
+    }
+    
+    game = init_game(width, height);
+    if (!game) {
+      printf("Error: Failed to initialize game\n");
+      return 1;
+    }
+
+    if (random_mode) {
+      randomize_game(game);
+    }
   }
 
   setup_ncurses();
