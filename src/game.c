@@ -200,3 +200,10 @@ void step_game(Game *game) {
 
   swap_grids(game);
 }
+
+void toggle_cell(Game *game, int x, int y) {
+  if (x < 0 || x >= game->width || y < 0 || y >= game->height) {
+    return;
+  }
+  game->grid[y * game->width + x] = !game->grid[y * game->width + x];
+}

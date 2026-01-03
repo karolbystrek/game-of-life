@@ -16,6 +16,8 @@ Game *init_game(int width, int height);
 
 void save_game_state(Game *game, char *status_buffer);
 
+void toggle_cell(Game *game, int x, int y);
+
 void step_game(Game *game);
 
 void free_game(Game *game);
