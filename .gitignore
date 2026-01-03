@@ -32,6 +32,11 @@
 *.exe
 *.out
 *.app
+game_of_life
+
+# Object files directory
+obj/
+
 *.i*86
 *.x86_64
 *.hex
