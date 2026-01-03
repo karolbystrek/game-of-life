@@ -6,18 +6,13 @@
 #include <unistd.h>
 
 static bool *allocate_grid(int width, int height) {
-  bool *grid = calloc(height * width, sizeof(bool));
-  if (!grid) {
-    return NULL;
-  }
-  return grid;
+  return calloc(height * width, sizeof(bool));
 }
 
 Game *init_game(int width, int height) {
   Game *game = malloc(sizeof(Game));
-  if (!game) {
+  if (!game)
     return NULL;
-  }
 
   game->width = width;
   game->height = height;
@@ -26,16 +21,7 @@ Game *init_game(int width, int height) {
   game->next_grid = allocate_grid(width, height);
 
   if (!game->grid || !game->next_grid || !game->initial_grid) {
-    if (game->grid) {
-      free(game->grid);
-    }
-    if (game->next_grid) {
-      free(game->next_grid);
-    }
-    if (game->initial_grid) {
-      free(game->initial_grid);
-    }
-    free(game);
+    free_game(game);
     return NULL;
   }
 
@@ -43,10 +29,8 @@ Game *init_game(int width, int height) {
 }
 
 void free_game(Game *game) {
-  if (!game) {
+  if (!game)
     return;
-  }
-
   free(game->grid);
   free(game->next_grid);
   free(game->initial_grid);
@@ -58,59 +42,45 @@ Game *load_game_from_file(const char *filename) {
   if (!f)
     return NULL;
 
-  int max_width = 0;
-  int height = 0;
-  int current_width = 0;
-  char ch;
-
-  while ((ch = fgetc(f)) != EOF) {
-    if (ch == '\n') {
-      height++;
-      if (current_width > max_width) {
-        max_width = current_width;
-      }
-      current_width = 0;
+  int max_width = 0, max_height = 0, width = 0, height;
+  while ((height = fgetc(f)) != EOF) {
+    if (height == '\n') {
+      max_height++;
+      if (width > max_width)
+        max_width = width;
+      width = 0;
     } else {
-      current_width++;
+      width++;
     }
   }
-
-  if (current_width > 0) {
-    height++;
-    if (current_width > max_width) {
-      max_width = current_width;
-    }
+  if (width > 0) {
+    max_height++;
+    if (width > max_width)
+      max_width = width;
   }
 
-  if (max_width == 0 || height == 0) {
+  if (max_width == 0 || max_height == 0) {
     fclose(f);
     return NULL;
   }
 
-  // reset file to the beginning
   rewind(f);
-
-  Game *game = init_game(max_width, height);
+  Game *game = init_game(max_width, max_height);
   if (!game) {
     fclose(f);
     return NULL;
   }
 
-  int y = 0;
-  int x = 0;
-  while ((ch = fgetc(f)) != EOF) {
-    if (ch == '\n') {
+  int x = 0, y = 0;
+  while ((height = fgetc(f)) != EOF) {
+    if (height == '\n') {
       y++;
       x = 0;
     } else {
-      if (x < max_width && y < height) {
-        if (ch == '#') {
-          game->grid[y * game->width + x] = true;
-          game->initial_grid[y * game->width + x] = true;
-        } else {
-          game->grid[y * game->width + x] = false;
-          game->initial_grid[y * game->width + x] = false;
-        }
+      if (x < max_width && y < max_height) {
+        bool alive = (height == '#');
+        game->grid[y * game->width + x] = alive;
+        game->initial_grid[y * game->width + x] = alive;
       }
       x++;
     }
@@ -124,86 +94,61 @@ void save_game_state(Game *game, char *status_buffer) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
   char filename[100];
-
   strftime(filename, sizeof(filename), "snapshot_%Y%m%d_%H%M%S.txt", t);
 
   FILE *f = fopen(filename, "w");
   if (!f) {
-    snprintf(status_buffer, 256, "Error: Failed to save to %s", filename);
+    if (status_buffer)
+      snprintf(status_buffer, 256, "Error saving %s", filename);
     return;
   }
 
   for (int y = 0; y < game->height; y++) {
     for (int x = 0; x < game->width; x++) {
-      if (game->grid[y * game->width + x]) {
-        fputc('#', f);
-      } else {
-        fputc('.', f);
-      }
+      fputc(game->grid[y * game->width + x] ? '#' : '.', f);
     }
     fputc('\n', f);
   }
 
   fclose(f);
-  snprintf(status_buffer, 256, "Success: Saved to %s", filename);
+  if (status_buffer)
+    snprintf(status_buffer, 256, "Saved %s", filename);
 }
 
 static int count_neighbors(Game *game, int x, int y) {
   int count = 0;
   for (int i = -1; i <= 1; i++) {
     for (int j = -1; j <= 1; j++) {
-      if (j == 0 && i == 0) {
+      if (i == 0 && j == 0)
         continue;
-      }
-
-      // wrap around the edges
       int row = (y + i + game->height) % game->height;
       int col = (x + j + game->width) % game->width;
-
-      if (game->grid[row * game->width + col]) {
+      if (game->grid[row * game->width + col])
         count++;
-      }
     }
   }
   return count;
 }
 
-static void swap_grids(Game *game) {
-  bool *temp = game->grid;
-  game->grid = game->next_grid;
-  game->next_grid = temp;
-}
-
 void step_game(Game *game) {
-  for (int h = 0; h < game->height; h++) {
-    for (int w = 0; w < game->width; w++) {
-      int neighbors = count_neighbors(game, w, h);
-      bool alive = game->grid[h * game->width + w];
-
-      if (alive) {
-        if (neighbors < 2 || neighbors > 3) {
-          game->next_grid[h * game->width + w] = false;
-        } else {
-          game->next_grid[h * game->width + w] = true;
-        }
-      } else {
-        if (neighbors == 3) {
-          game->next_grid[h * game->width + w] = true;
-        } else {
-          game->next_grid[h * game->width + w] = false;
-        }
-      }
+  for (int y = 0; y < game->height; y++) {
+    for (int x = 0; x < game->width; x++) {
+      int n = count_neighbors(game, x, y);
+      bool alive = game->grid[y * game->width + x];
+      game->next_grid[y * game->width + x] =
+          (alive && (n == 2 || n == 3)) || (!alive && n == 3);
     }
   }
 
-  swap_grids(game);
+  bool *tmp = game->grid;
+  game->grid = game->next_grid;
+  game->next_grid = tmp;
 }
 
 void toggle_cell(Game *game, int x, int y) {
-  if (x < 0 || x >= game->width || y < 0 || y >= game->height) {
-    return;
+  if (x >= 0 && x < game->width && y >= 0 && y < game->height) {
+    game->grid[y * game->width + x] = !game->grid[y * game->width + x];
   }
-  game->grid[y * game->width + x] = !game->grid[y * game->width + x];
 }
 
 void randomize_game(Game *game) {
