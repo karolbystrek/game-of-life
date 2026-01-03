@@ -10,8 +10,8 @@
 #define DELAY_STEP 10000000L // 10ms steps
 
 #define PAIR_ALIVE 1
-#define PAIR_DEAD  2
-#define PAIR_UI    3
+#define PAIR_DEAD 2
+#define PAIR_UI 3
 
 void setup_ncurses() {
   initscr();
@@ -31,7 +31,7 @@ void setup_ncurses() {
 }
 
 void draw_game(Game *game, int generation, bool is_paused,
-               long simulation_speed_ns) {
+               long simulation_speed_ns, const char *status_msg) {
   clear();
 
   for (int y = 0; y < game->height; y++) {
@@ -54,15 +54,22 @@ void draw_game(Game *game, int generation, bool is_paused,
   attron(COLOR_PAIR(PAIR_UI) | A_BOLD);
   if (is_paused) {
     mvprintw(footer_y, 0,
-             "Epoch: %d | Delay: %dms | Controls: [P] Play, [Q] Quit, "
-             "[-/+] Speed, [Space] Step",
+             " Epoch: %d \n Simulation speed: %dms \n Controls: [Space] Step, "
+             "[P] Play, [S] Save, [Q] Quit, "
+             "[-/+] Speed",
              generation, delay_ms);
   } else {
     mvprintw(footer_y, 0,
-             "Epoch: %d | Delay: %dms | Controls: [P] Pause, [Q] Quit, "
+             " Epoch: %d \n Simulation speed: %dms \n Controls: [P] Pause, [S] "
+             "Save, [Q] Quit, "
              "[-/+] Speed",
              generation, delay_ms);
   }
+
+  if (status_msg && status_msg[0] != '\0') {
+    mvprintw(footer_y + 3, 0, ">> %s", status_msg);
+  }
+
   attroff(COLOR_PAIR(PAIR_UI) | A_BOLD);
 
   refresh();
@@ -86,6 +93,7 @@ int main(int argc, char *argv[]) {
   bool is_paused = true;
   long simulation_speed_ns = 100000000L;
   int epoch = 0;
+  char status_msg[256] = {0};
 
   while (is_running) {
     int ch = getch();
@@ -108,6 +116,8 @@ int main(int argc, char *argv[]) {
         if (simulation_speed_ns < MAX_DELAY) {
           simulation_speed_ns += DELAY_STEP;
         }
+      } else if (ch == 's' || ch == 'S') {
+        save_game_state(game, status_msg);
       }
     }
 
@@ -116,7 +126,7 @@ int main(int argc, char *argv[]) {
       epoch++;
     }
 
-    draw_game(game, epoch, is_paused, simulation_speed_ns);
+    draw_game(game, epoch, is_paused, simulation_speed_ns, status_msg);
 
     struct timespec ts = {0, simulation_speed_ns};
     nanosleep(&ts, NULL);

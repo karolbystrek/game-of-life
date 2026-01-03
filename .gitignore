@@ -58,3 +58,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# game snapshots
+snapshot_*.txt

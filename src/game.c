@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 static bool *allocate_grid(int width, int height) {
   bool *grid = calloc(height * width, sizeof(bool));
@@ -118,6 +120,34 @@ Game *load_game_from_file(const char *filename) {
 
   fclose(f);
   return game;
+}
+
+void save_game_state(Game *game, char *status_buffer) {
+  time_t now = time(NULL);
+  struct tm *t = localtime(&now);
+  char filename[100];
+
+  strftime(filename, sizeof(filename), "snapshot_%Y%m%d_%H%M%S.txt", t);
+
+  FILE *f = fopen(filename, "w");
+  if (!f) {
+    snprintf(status_buffer, 256, "Error: Failed to save to %s", filename);
+    return;
+  }
+
+  for (int y = 0; y < game->height; y++) {
+    for (int x = 0; x < game->width; x++) {
+      if (game->grid[y * game->width + x]) {
+        fputc('#', f);
+      } else {
+        fputc('.', f);
+      }
+    }
+    fputc('\n', f);
+  }
+
+  fclose(f);
+  snprintf(status_buffer, 256, "Success: Saved to %s", filename);
 }
 
 static int count_neighbors(Game *game, int x, int y) {

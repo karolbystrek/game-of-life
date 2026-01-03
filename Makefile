@@ -1,6 +1,6 @@
 TARGET   = game_of_life
 CC       = gcc
-CFLAGS   = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=199309L -Iinclude -MMD -MP
+CFLAGS   = -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L -Iinclude -MMD -MP
 LDFLAGS  = -lncurses
 
 SRC_DIR  = src
