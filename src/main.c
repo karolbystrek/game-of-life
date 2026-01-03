@@ -9,6 +9,10 @@
 #define MAX_DELAY 990000000L // 990ms
 #define DELAY_STEP 10000000L // 10ms steps
 
+#define PAIR_ALIVE 1
+#define PAIR_DEAD  2
+#define PAIR_UI    3
+
 void setup_ncurses() {
   initscr();
   cbreak();
@@ -16,6 +20,14 @@ void setup_ncurses() {
   curs_set(0);
   nodelay(stdscr, TRUE);
   keypad(stdscr, TRUE);
+
+  if (has_colors()) {
+    start_color();
+    use_default_colors();
+    init_pair(PAIR_ALIVE, COLOR_MAGENTA, -1);
+    init_pair(PAIR_DEAD, COLOR_WHITE, -1);
+    init_pair(PAIR_UI, COLOR_BLACK, -1);
+  }
 }
 
 void draw_game(Game *game, int generation, bool is_paused,
@@ -25,9 +37,13 @@ void draw_game(Game *game, int generation, bool is_paused,
   for (int y = 0; y < game->height; y++) {
     for (int x = 0; x < game->width; x++) {
       if (game->grid[y * game->width + x]) {
+        attron(COLOR_PAIR(PAIR_ALIVE) | A_BOLD);
         mvaddch(y, x, '#');
+        attroff(COLOR_PAIR(PAIR_ALIVE) | A_BOLD);
       } else {
+        attron(COLOR_PAIR(PAIR_DEAD) | A_DIM);
         mvaddch(y, x, '.');
+        attroff(COLOR_PAIR(PAIR_DEAD) | A_DIM);
       }
     }
   }
@@ -35,6 +51,7 @@ void draw_game(Game *game, int generation, bool is_paused,
   int footer_y = game->height + 1;
   int delay_ms = simulation_speed_ns / 1000000;
 
+  attron(COLOR_PAIR(PAIR_UI) | A_BOLD);
   if (is_paused) {
     mvprintw(footer_y, 0,
              "Epoch: %d | Delay: %dms | Controls: [P] Play, [Q] Quit, "
@@ -46,6 +63,7 @@ void draw_game(Game *game, int generation, bool is_paused,
              "[-/+] Speed",
              generation, delay_ms);
   }
+  attroff(COLOR_PAIR(PAIR_UI) | A_BOLD);
 
   refresh();
 }
