@@ -82,7 +82,7 @@ void ui_draw(const AppState *app) {
   mvprintw(fy + 2, 0, " CONTROLS ");
   attroff(A_BOLD);
   printw("| [ARROWS] Move [ENT] Toggle [SPC] Step");
-  mvprintw(fy + 3, 10, "| [P] Play/Pause [S] Save [+/-] Spd");
+  mvprintw(fy + 3, 10, "| [P] Play/Pause [S] Save [+/-] Speed");
   mvprintw(fy + 4, 10, "| [R] Reset [Q] Quit");
 
   if (app->status_msg[0]) {

@@ -109,7 +109,7 @@ static void run_ui(AppState *app) {
   while (app->shared->is_running) {
     ui_draw(app);
     ui_handle_input(app);
-    struct timespec ts = {0, 10000000L};
+    struct timespec ts = {0, 10000000L}; // 10ms
     nanosleep(&ts, NULL);
   }
   ui_cleanup();
