@@ -6,8 +6,8 @@
 typedef struct {
     int width;
     int height;
-    bool **grid;
-    bool **next_grid;
+    bool *grid;
+    bool *next_grid;
 } Game;
 
 Game *load_game_from_file(const char *filename);

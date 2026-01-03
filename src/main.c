@@ -19,13 +19,10 @@ void draw_game(Game *game, int generation, bool is_paused) {
     
     for (int y = 0; y < game->height; y++) {
         for (int x = 0; x < game->width; x++) {
-            int screen_y = y;
-            int screen_x = x;
-
-            if (game->grid[y][x]) {
-                mvaddch(screen_y, screen_x, 'O');
+            if (game->grid[y * game->width + x]) {
+                mvaddch(y, x, '#');
             } else {
-                mvaddch(screen_y, screen_x, '.');
+                mvaddch(y, x, '.');
             }
         }
     }

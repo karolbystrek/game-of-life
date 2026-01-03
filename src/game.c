@@ -3,32 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool **allocate_grid(int width, int height) {
-  bool **grid = malloc(height * sizeof(bool *));
+static bool *allocate_grid(int width, int height) {
+  bool *grid = calloc(height * width, sizeof(bool));
   if (!grid) {
     return NULL;
   }
 
-  for (int i = 0; i < height; i++) {
-    grid[i] = calloc(width, sizeof(bool));
-    if (!grid[i]) {
-      for (int k = 0; k < i; k++) {
-        free(grid[k]);
-      }
-      free(grid);
-      return NULL;
-    }
-  }
   return grid;
 }
 
-static void free_grid(bool **grid, int height) {
+static void free_grid(bool *grid) {
   if (!grid) {
     return;
-  }
-
-  for (int i = 0; i < height; i++) {
-    free(grid[i]);
   }
 
   free(grid);
@@ -47,10 +33,10 @@ Game *init_game(int width, int height) {
 
   if (!game->grid || !game->next_grid) {
     if (game->grid) {
-      free_grid(game->grid, height);
+      free_grid(game->grid);
     }
     if (game->next_grid) {
-      free_grid(game->next_grid, height);
+      free_grid(game->next_grid);
     }
     free(game);
     return NULL;
@@ -64,8 +50,8 @@ void free_game(Game *game) {
     return;
   }
 
-  free_grid(game->grid, game->height);
-  free_grid(game->next_grid, game->height);
+  free_grid(game->grid);
+  free_grid(game->next_grid);
   free(game);
 }
 
@@ -121,9 +107,9 @@ Game *load_game_from_file(const char *filename) {
     } else {
       if (x < max_width && y < height) {
         if (ch == '#') {
-          game->grid[y][x] = true;
+          game->grid[y * game->width + x] = true;
         } else {
-          game->grid[y][x] = false;
+          game->grid[y * game->width + x] = false;
         }
       }
       x++;
@@ -146,7 +132,7 @@ static int count_neighbors(Game *game, int x, int y) {
       int row = (y + i + game->height) % game->height;
       int col = (x + j + game->width) % game->width;
 
-      if (game->grid[row][col]) {
+      if (game->grid[row * game->width + col]) {
         count++;
       }
     }
@@ -155,7 +141,7 @@ static int count_neighbors(Game *game, int x, int y) {
 }
 
 static void swap_grids(Game *game) {
-  bool **temp = game->grid;
+  bool *temp = game->grid;
   game->grid = game->next_grid;
   game->next_grid = temp;
 }
@@ -164,19 +150,19 @@ void step_game(Game *game) {
   for (int h = 0; h < game->height; h++) {
     for (int w = 0; w < game->width; w++) {
       int neighbors = count_neighbors(game, w, h);
-      bool alive = game->grid[h][w];
+      bool alive = game->grid[h * game->width + w];
 
       if (alive) {
         if (neighbors < 2 || neighbors > 3) {
-          game->next_grid[h][w] = false;
+          game->next_grid[h * game->width + w] = false;
         } else {
-          game->next_grid[h][w] = true;
+          game->next_grid[h * game->width + w] = true;
         }
       } else {
         if (neighbors == 3) {
-          game->next_grid[h][w] = true;
+          game->next_grid[h * game->width + w] = true;
         } else {
-          game->next_grid[h][w] = false;
+          game->next_grid[h * game->width + w] = false;
         }
       }
     }
