@@ -10,16 +10,7 @@ static bool *allocate_grid(int width, int height) {
   if (!grid) {
     return NULL;
   }
-
   return grid;
-}
-
-static void free_grid(bool *grid) {
-  if (!grid) {
-    return;
-  }
-
-  free(grid);
 }
 
 Game *init_game(int width, int height) {
@@ -30,15 +21,19 @@ Game *init_game(int width, int height) {
 
   game->width = width;
   game->height = height;
+  game->initial_grid = allocate_grid(width, height);
   game->grid = allocate_grid(width, height);
   game->next_grid = allocate_grid(width, height);
 
-  if (!game->grid || !game->next_grid) {
+  if (!game->grid || !game->next_grid || !game->initial_grid) {
     if (game->grid) {
-      free_grid(game->grid);
+      free(game->grid);
     }
     if (game->next_grid) {
-      free_grid(game->next_grid);
+      free(game->next_grid);
+    }
+    if (game->initial_grid) {
+      free(game->initial_grid);
     }
     free(game);
     return NULL;
@@ -52,8 +47,9 @@ void free_game(Game *game) {
     return;
   }
 
-  free_grid(game->grid);
-  free_grid(game->next_grid);
+  free(game->grid);
+  free(game->next_grid);
+  free(game->initial_grid);
   free(game);
 }
 
@@ -91,7 +87,7 @@ Game *load_game_from_file(const char *filename) {
     return NULL;
   }
 
-  //reset file to the beginning
+  // reset file to the beginning
   rewind(f);
 
   Game *game = init_game(max_width, height);
@@ -110,8 +106,10 @@ Game *load_game_from_file(const char *filename) {
       if (x < max_width && y < height) {
         if (ch == '#') {
           game->grid[y * game->width + x] = true;
+          game->initial_grid[y * game->width + x] = true;
         } else {
           game->grid[y * game->width + x] = false;
+          game->initial_grid[y * game->width + x] = false;
         }
       }
       x++;
@@ -158,7 +156,7 @@ static int count_neighbors(Game *game, int x, int y) {
         continue;
       }
 
-      //wrap around the edges
+      // wrap around the edges
       int row = (y + i + game->height) % game->height;
       int col = (x + j + game->width) % game->width;
 
@@ -211,6 +209,11 @@ void toggle_cell(Game *game, int x, int y) {
 void randomize_game(Game *game) {
   srand(time(NULL));
   for (int i = 0; i < game->width * game->height; i++) {
-    game->grid[i] = (rand() % 5 == 0); 
+    game->grid[i] = (rand() % 5 == 0);
   }
+}
+
+void reset_game(Game *game) {
+  memcpy(game->grid, game->initial_grid,
+         game->width * game->height * sizeof(bool));
 }
