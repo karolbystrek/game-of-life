@@ -38,12 +38,12 @@ void free_game(Game *game) {
 }
 
 Game *load_game_from_file(const char *filename) {
-  FILE *f = fopen(filename, "r");
-  if (!f)
+  FILE *file = fopen(filename, "r");
+  if (!file)
     return NULL;
 
   int max_width = 0, max_height = 0, width = 0, height;
-  while ((height = fgetc(f)) != EOF) {
+  while ((height = fgetc(file)) != EOF) {
     if (height == '\n') {
       max_height++;
       if (width > max_width)
@@ -60,19 +60,19 @@ Game *load_game_from_file(const char *filename) {
   }
 
   if (max_width == 0 || max_height == 0) {
-    fclose(f);
+    fclose(file);
     return NULL;
   }
 
-  rewind(f);
+  rewind(file);
   Game *game = init_game(max_width, max_height);
   if (!game) {
-    fclose(f);
+    fclose(file);
     return NULL;
   }
 
   int x = 0, y = 0;
-  while ((height = fgetc(f)) != EOF) {
+  while ((height = fgetc(file)) != EOF) {
     if (height == '\n') {
       y++;
       x = 0;
@@ -86,7 +86,7 @@ Game *load_game_from_file(const char *filename) {
     }
   }
 
-  fclose(f);
+  fclose(file);
   return game;
 }
 
@@ -96,8 +96,8 @@ void save_game_state(Game *game, char *status_buffer) {
   char filename[100];
   strftime(filename, sizeof(filename), "snapshot_%Y%m%d_%H%M%S.txt", t);
 
-  FILE *f = fopen(filename, "w");
-  if (!f) {
+  FILE *file = fopen(filename, "w");
+  if (!file) {
     if (status_buffer)
       snprintf(status_buffer, 256, "Error saving %s", filename);
     return;
@@ -105,12 +105,12 @@ void save_game_state(Game *game, char *status_buffer) {
 
   for (int y = 0; y < game->height; y++) {
     for (int x = 0; x < game->width; x++) {
-      fputc(game->grid[y * game->width + x] ? '#' : '.', f);
+      fputc(game->grid[y * game->width + x] ? '#' : '.', file);
     }
-    fputc('\n', f);
+    fputc('\n', file);
   }
 
-  fclose(f);
+  fclose(file);
   if (status_buffer)
     snprintf(status_buffer, 256, "Saved %s", filename);
 }

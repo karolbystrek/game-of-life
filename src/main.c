@@ -2,8 +2,8 @@
 #include "config.h"
 
 int main(int argc, char *argv[]) {
-  AppConfig cfg = parse_args(argc, argv);
-  AppState *app = app_init(&cfg);
+  AppConfig config = parse_args(argc, argv);
+  AppState *app = app_init(&config);
   if (!app)
     return 1;
 

@@ -20,22 +20,22 @@ static void clean_res() {
   sem_unlink(SEM_NAME);
 }
 
-AppState *app_init(const AppConfig *cfg) {
+AppState *app_init(const AppConfig *config) {
   AppState *app = calloc(1, sizeof(AppState));
   if (!app)
     return NULL;
 
-  Game *tmp = cfg->filename ? load_game_from_file(cfg->filename)
-                            : init_game(cfg->width, cfg->height);
-  if (!tmp) {
+  Game *game = config->filename ? load_game_from_file(config->filename)
+                            : init_game(config->width, config->height);
+  if (!game) {
     fprintf(stderr, "Init failed\n");
     exit(EXIT_FAILURE);
   }
-  if (!cfg->filename && cfg->random_mode)
-    randomize_game(tmp);
+  if (!config->filename && config->random_mode)
+    randomize_game(game);
 
-  int w = tmp->width, h = tmp->height;
-  size_t g_sz = w * h * sizeof(bool);
+  int width = game->width, height = game->height;
+  size_t g_sz = width * height * sizeof(bool);
   size_t shm_sz = sizeof(SharedState) + 3 * g_sz;
 
   clean_res();
@@ -57,43 +57,43 @@ AppState *app_init(const AppConfig *cfg) {
   app->grid_buffers[1] = (bool *)((char *)base + sizeof(SharedState) + g_sz);
   app->initial_buffer = (bool *)((char *)base + sizeof(SharedState) + 2 * g_sz);
 
-  app->shared->width = w;
-  app->shared->height = h;
+  app->shared->width = width;
+  app->shared->height = height;
   app->shared->is_running = true;
   app->shared->is_paused = true;
   app->shared->simulation_speed_ns = 100000000L;
   app->shared->epoch = 0;
   app->shared->current_buffer_index = 0;
 
-  memcpy(app->grid_buffers[0], tmp->grid, g_sz);
-  memcpy(app->grid_buffers[1], tmp->grid, g_sz);
-  memcpy(app->initial_buffer, tmp->grid, g_sz);
+  memcpy(app->grid_buffers[0], game->grid, g_sz);
+  memcpy(app->grid_buffers[1], game->grid, g_sz);
+  memcpy(app->initial_buffer, game->grid, g_sz);
 
-  free_game(tmp);
+  free_game(game);
 
   app->sem_mutex = sem_open(SEM_NAME, O_CREAT, 0666, 1);
   if (app->sem_mutex == SEM_FAILED)
     exit(EXIT_FAILURE);
 
-  app->cursor.x = w / 2;
-  app->cursor.y = h / 2;
+  app->cursor.x = width / 2;
+  app->cursor.y = height / 2;
   return app;
 }
 
 static void run_eng(AppState *app) {
-  Game g;
-  g.width = app->shared->width;
-  g.height = app->shared->height;
-  g.initial_grid = NULL;
+  Game game;
+  game.width = app->shared->width;
+  game.height = app->shared->height;
+  game.initial_grid = NULL;
 
   while (app->shared->is_running) {
     if (!app->shared->is_paused) {
       sem_wait(app->sem_mutex);
       int cur = app->shared->current_buffer_index;
-      g.grid = app->grid_buffers[cur];
-      g.next_grid = app->grid_buffers[!cur];
+      game.grid = app->grid_buffers[cur];
+      game.next_grid = app->grid_buffers[!cur];
 
-      step_game(&g);
+      step_game(&game);
 
       app->shared->current_buffer_index = !cur;
       app->shared->epoch++;
